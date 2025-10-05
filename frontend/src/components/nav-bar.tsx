@@ -21,7 +21,11 @@ const NavBar: React.FC = () => {
       <div className="container mx-auto p-4">
         <div className="flex justify-between items-center">
           <div className="flex gap-10 md:gap-20 items-center">
-            <h1 className="text-xl font-bold">Event Ticket Platform</h1>
+            <h1 className="text-xl font-bold">
+              <Link to="/" className="text-xl font-bold hover:underline">
+                Event Ticket Platform
+              </Link>
+            </h1>
             <div className="text-gray-300 flex gap-8">
               {isOrganizer && <Link to="/dashboard/events">Events</Link>}
               <Link to="/dashboard/tickets">Tickets</Link>
