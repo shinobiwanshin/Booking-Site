@@ -219,6 +219,7 @@ export const purchaseTicket = async (
   accessToken: string,
   eventId: string,
   ticketTypeId: string,
+  quantity: number, // Add quantity as a parameter
 ): Promise<void> => {
   const response = await fetch(
     `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
@@ -228,6 +229,9 @@ export const purchaseTicket = async (
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        quantity, // Include quantity in the request body
+      }),
     },
   );
 

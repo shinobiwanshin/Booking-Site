@@ -1,5 +1,6 @@
 package com.capstone.tickets.services.impl;
 
+import com.capstone.tickets.domain.dtos.TicketBookingRequest;
 import com.capstone.tickets.domain.entities.Ticket;
 import com.capstone.tickets.repositories.TicketRepository;
 import com.capstone.tickets.services.TicketService;
@@ -24,5 +25,27 @@ public class TicketServiceImpl implements TicketService {
   @Override
   public Optional<Ticket> getTicketForUser(UUID userId, UUID ticketId) {
     return ticketRepository.findByIdAndPurchaserId(ticketId, userId);
+  }
+
+  @Override
+  public Ticket bookTickets(TicketBookingRequest request) {
+    Ticket ticket = Ticket.builder()
+        .status(request.getStatus())
+        .ticketType(request.getTicketType())
+        .purchaser(request.getPurchaser())
+        .quantity(request.getQuantity()) // Set the quantity
+        .build();
+
+    return ticketRepository.save(ticket);
+  }
+
+  @Override
+  public Optional<Ticket> findByQrCode(String qrCode) {
+    return ticketRepository.findByQrCode(qrCode);
+  }
+
+  @Override
+  public void save(Ticket ticket) {
+    ticketRepository.save(ticket);
   }
 }

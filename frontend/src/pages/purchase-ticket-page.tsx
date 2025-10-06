@@ -13,6 +13,7 @@ const PurchaseTicketPage: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | undefined>();
   const [isPurchaseSuccess, setIsPurchaseASuccess] = useState(false);
+  const [quantity, setQuantity] = useState(1); // State for ticket quantity
 
   useEffect(() => {
     if (!isPurchaseSuccess) {
@@ -30,7 +31,8 @@ const PurchaseTicketPage: React.FC = () => {
       return;
     }
     try {
-      await purchaseTicket(user.access_token, eventId, ticketTypeId);
+      // Call the API to purchase tickets with quantity
+      await purchaseTicket(user.access_token, eventId, ticketTypeId, quantity);
       setIsPurchaseASuccess(true);
     } catch (err) {
       if (err instanceof Error) {
@@ -76,6 +78,18 @@ const PurchaseTicketPage: React.FC = () => {
             </div>
           )}
 
+          {/* Quantity Input */}
+          <div className="space-y-2">
+            <Label className="text-gray-600">Number of Tickets</Label>
+            <Input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              min="1"
+              className="bg-gray-200 text-black"
+            />
+          </div>
+
           {/* Credit Card Number */}
           <div className="space-y-2">
             <Label className="text-gray-600">Credit Card Number</Label>
@@ -107,7 +121,7 @@ const PurchaseTicketPage: React.FC = () => {
               className="bg-purple-500 hover:bg-purple-800 cursor-pointer"
               onClick={handlePurchase}
             >
-              Purchase Ticket
+              Purchase Tickets
             </Button>
           </div>
 
