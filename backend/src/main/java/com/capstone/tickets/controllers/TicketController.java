@@ -31,6 +31,7 @@ public class TicketController {
   private final TicketService ticketService;
   private final TicketMapper ticketMapper;
   private final QrCodeService qrCodeService;
+  private final com.capstone.tickets.services.PdfService pdfService;
 
   @PostMapping("/validate/{qrCode}")
   public ResponseEntity<String> validateTicket(@PathVariable String qrCode) {
@@ -61,19 +62,16 @@ public class TicketController {
   @GetMapping
   public Page<ListTicketResponseDto> listTickets(
       @AuthenticationPrincipal Jwt jwt,
-      Pageable pageable
-  ) {
+      Pageable pageable) {
     return ticketService.listTicketsForUser(
         parseUserId(jwt),
-        pageable
-    ).map(ticketMapper::toListTicketResponseDto);
+        pageable).map(ticketMapper::toListTicketResponseDto);
   }
 
   @GetMapping(path = "/{ticketId}")
   public ResponseEntity<GetTicketResponseDto> getTicket(
       @AuthenticationPrincipal Jwt jwt,
-      @PathVariable UUID ticketId
-  ) {
+      @PathVariable UUID ticketId) {
     return ticketService
         .getTicketForUser(parseUserId(jwt), ticketId)
         .map(ticketMapper::toGetTicketResponseDto)
@@ -84,12 +82,10 @@ public class TicketController {
   @GetMapping(path = "/{ticketId}/qr-codes")
   public ResponseEntity<byte[]> getTicketQrCode(
       @AuthenticationPrincipal Jwt jwt,
-      @PathVariable UUID ticketId
-  ) {
+      @PathVariable UUID ticketId) {
     byte[] qrCodeImage = qrCodeService.getQrCodeImageForUserAndTicket(
         parseUserId(jwt),
-        ticketId
-    );
+        ticketId);
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.IMAGE_PNG);
@@ -98,6 +94,27 @@ public class TicketController {
     return ResponseEntity.ok()
         .headers(headers)
         .body(qrCodeImage);
+  }
+
+  @GetMapping(path = "/{ticketId}/pdf")
+  public ResponseEntity<byte[]> downloadTicketPdf(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable UUID ticketId) {
+    // Load ticket ensuring it belongs to the current user
+    Optional<Ticket> ticketOpt = ticketService.getTicketForUser(parseUserId(jwt), ticketId);
+    if (ticketOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    byte[] qrCodeImage = qrCodeService.getQrCodeImageForUserAndTicket(parseUserId(jwt), ticketId);
+    byte[] pdfBytes = pdfService.generateTicketPdf(ticketOpt.get(), qrCodeImage);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_PDF);
+    headers.setContentLength(pdfBytes.length);
+    headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Ticket-" + ticketId + ".pdf");
+
+    return ResponseEntity.ok().headers(headers).body(pdfBytes);
   }
 
 }

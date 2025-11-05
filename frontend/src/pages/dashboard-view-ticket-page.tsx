@@ -1,12 +1,10 @@
 import { TicketDetails, TicketStatus } from "@/domain/domain";
-import { getTicket, getTicketQr } from "@/lib/api";
+import { getTicket, getTicketQr, getTicketPdf } from "@/lib/api";
 import { format } from "date-fns";
 import { Calendar, DollarSign, MapPin, Tag, Download } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useParams } from "react-router";
-import jsPDF from "jspdf";
-import domtoimage from "dom-to-image-more"; // Using dom-to-image-more
 
 const DashboardViewTicketPage: React.FC = () => {
   const [ticket, setTicket] = useState<TicketDetails | undefined>();
@@ -16,7 +14,6 @@ const DashboardViewTicketPage: React.FC = () => {
 
   const { id } = useParams();
   const { isLoading, user } = useAuth();
-  const ticketRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isLoading || !user?.access_token || !id) return;
@@ -60,136 +57,23 @@ const DashboardViewTicketPage: React.FC = () => {
   };
 
   const downloadPdf = async () => {
-    if (!ticket) return;
-
-    // We replace all complex React/Tailwind rendering with a simple HTML string
-    // using only guaranteed supported CSS (hex, rgb, basic properties).
-    const ticketHtml = `
-      <div style="
-        width: 350px; 
-        padding: 30px; 
-        margin: 20px auto; 
-        background-color: #4C1D95; 
-        color: #F5F5F5; 
-        border-radius: 20px; 
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
-        font-family: Inter, Arial, sans-serif;
-      ">
-        
-        <div style="text-align: center; margin-bottom: 25px;">
-          <span style="
-            font-size: 14px; 
-            font-weight: bold; 
-            padding: 4px 12px; 
-            border-radius: 9999px; /* Rounded-full */
-            background-color: #222222; /* Solid dark background */
-            color: #D1C4E9; /* Light purple text color */
-          ">
-            ${ticket.status}
-          </span>
-        </div>
-
-        <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">
-          ${ticket.eventName}
-        </h1>
-        
-        <p style="margin-bottom: 5px; font-size: 14px; color: #D1C4E9;">
-          📍 ${ticket.eventVenue}
-        </p>
-        
-        <p style="margin-bottom: 25px; font-size: 14px; color: #D1C4E9;">
-          📅 ${format(ticket.eventStart, "Pp")} - ${format(ticket.eventEnd, "Pp")}
-        </p>
-
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img 
-            src="${qrCodeUrl || ""}" 
-            alt="QR Code" 
-            style="width: 128px; height: 128px; padding: 10px; background-color: white; border-radius: 10px;"
-          />
-          <p style="font-size: 12px; color: #D1C4E9; margin-top: 10px;">
-            Present this QR code at the venue for entry
-          </p>
-        </div>
-
-        <div style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
-          <p style="font-size: 14px; margin-bottom: 5px;">
-            🏷️ <span style="font-weight: bold;">${ticket.description}</span>
-          </p>
-          <p style="font-size: 16px; font-weight: bold;">
-            💵 ${ticket.price}
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-top: 20px; padding-top: 10px;">
-          <h4 style="font-size: 12px; font-weight: bold; font-family: monospace;">Ticket ID</h4>
-          <p style="font-size: 12px; color: #D1C4E9; font-family: monospace;">${ticket.id}</p>
-        </div>
-      </div>
-    `;
-
-    // 1. Create a temporary element container
-    const tempContainer = document.createElement("div");
-    tempContainer.innerHTML = ticketHtml;
-
-    // 2. Safely extract the first ELEMENT (the main ticket div)
-    const elementToCapture =
-      tempContainer.firstElementChild as HTMLElement | null;
-
-    if (!elementToCapture) {
-      console.error("Failed to construct the printable HTML element.");
-      return;
-    }
-
-    // 3. Position the element off-screen for capture
-    elementToCapture.style.position = "absolute";
-    elementToCapture.style.top = "-9999px";
-    document.body.appendChild(elementToCapture);
-
-    const scale = 3;
+    if (!ticket || isLoading || !user?.access_token) return;
 
     try {
-      // 4. Convert HTML to PNG (using dom-to-image-more)
-      const dataUrl = await domtoimage.toPng(elementToCapture, {
-        width: elementToCapture.offsetWidth * scale,
-        height: elementToCapture.offsetHeight * scale,
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
-        },
-      });
-
-      // 5. Convert PNG to PDF
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4",
-      });
-      const imgProps = pdf.getImageProperties(dataUrl);
-      const imageNativeWidth = imgProps.width / scale;
-      const imageNativeHeight = imgProps.height / scale;
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const margin = 40;
-      const contentWidth = pdfWidth - 2 * margin;
-      const contentHeight =
-        (imageNativeHeight * contentWidth) / imageNativeWidth;
-      const xPosition = margin;
-      const yPosition = margin;
-
-      pdf.addImage(
-        dataUrl,
-        "PNG",
-        xPosition,
-        yPosition,
-        contentWidth,
-        contentHeight,
-      );
-      pdf.save(`${ticket.eventName || "ticket"}.pdf`);
+      const blob = await getTicketPdf(user.access_token, ticket.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${ticket.eventName || "ticket"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Error generating PDF:", err);
-    } finally {
-      // 6. CRITICAL: Clean up the temporary element
-      document.body.removeChild(elementToCapture);
+      console.error(err);
+      alert(
+        err instanceof Error ? err.message : "Failed to download ticket PDF",
+      );
     }
   };
 
@@ -206,7 +90,7 @@ const DashboardViewTicketPage: React.FC = () => {
       </button>
 
       {/* Ticket content (This is the original UI display) */}
-      <div ref={ticketRef} className="w-full max-w-md">
+      <div className="w-full max-w-md">
         <div className="relative bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 rounded-3xl p-8 shadow-2xl">
           {/* Status */}
           <div className="bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full mb-8 text-center">

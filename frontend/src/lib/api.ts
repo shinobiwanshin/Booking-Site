@@ -365,6 +365,35 @@ export const getTicketQr = async (
   }
 };
 
+export const getTicketPdf = async (
+  accessToken: string,
+  id: string,
+): Promise<Blob> => {
+  const response = await fetch(`/api/v1/tickets/${id}/pdf`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/pdf",
+    },
+  });
+
+  if (response.ok) {
+    return await response.blob();
+  }
+
+  let message = `Unable to download ticket PDF (status ${response.status})`;
+  try {
+    const text = await response.text();
+    if (text) {
+      const json = JSON.parse(text);
+      if (isErrorResponse(json)) message = json.error;
+    }
+  } catch {
+    // ignore
+  }
+  throw new Error(message);
+};
+
 export const validateTicket = async (
   accessToken: string,
   request: TicketValidationRequest,
