@@ -17,15 +17,16 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
   @Query("SELECT t FROM Ticket t JOIN t.qrCodes q WHERE q.value = :qrCode")
   Optional<Ticket> findByQrCode(@Param("qrCode") String qrCode);
 
-  int countByTicketTypeId(UUID ticketTypeId);
+  @Query("SELECT COALESCE(SUM(t.quantity), 0) FROM Ticket t WHERE t.ticketType.id = :ticketTypeId")
+  int countByTicketTypeId(@Param("ticketTypeId") UUID ticketTypeId);
 
   Page<Ticket> findByPurchaserId(UUID purchaserId, Pageable pageable);
 
   Optional<Ticket> findByIdAndPurchaserId(UUID id, UUID purchaserId);
 
-  @Query("SELECT COUNT(t) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
+  @Query("SELECT COALESCE(SUM(t.quantity), 0) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
   long countByOrganizer(@Param("organizerId") UUID organizerId);
 
-  @Query("SELECT COALESCE(SUM(tt.price), 0) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
+  @Query("SELECT COALESCE(SUM(tt.price * t.quantity), 0) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
   Double sumRevenueByOrganizer(@Param("organizerId") UUID organizerId);
 }

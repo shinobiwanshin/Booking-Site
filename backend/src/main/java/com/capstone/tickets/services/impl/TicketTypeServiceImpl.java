@@ -28,20 +28,22 @@ public class TicketTypeServiceImpl implements TicketTypeService {
 
   @Override
   @Transactional
-  public Ticket purchaseTicket(UUID userId, UUID ticketTypeId) {
+  public Ticket purchaseTicket(UUID userId, UUID ticketTypeId, int quantity) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("Quantity must be greater than 0");
+    }
+
     User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
-        String.format("User with ID %s was not found", userId)
-    ));
+        String.format("User with ID %s was not found", userId)));
 
     TicketType ticketType = ticketTypeRepository.findByIdWithLock(ticketTypeId)
         .orElseThrow(() -> new TicketTypeNotFoundException(
-            String.format("Ticket type with ID %s was not found", ticketTypeId)
-        ));
+            String.format("Ticket type with ID %s was not found", ticketTypeId)));
 
     int purchasedTickets = ticketRepository.countByTicketTypeId(ticketType.getId());
     Integer totalAvailable = ticketType.getTotalAvailable();
 
-    if(purchasedTickets + 1 > totalAvailable) {
+    if (purchasedTickets + quantity > totalAvailable) {
       throw new TicketsSoldOutException();
     }
 
@@ -49,6 +51,7 @@ public class TicketTypeServiceImpl implements TicketTypeService {
     ticket.setStatus(TicketStatusEnum.PURCHASED);
     ticket.setTicketType(ticketType);
     ticket.setPurchaser(user);
+    ticket.setQuantity(quantity);
 
     Ticket savedTicket = ticketRepository.save(ticket);
     qrCodeService.generateQrCode(savedTicket);

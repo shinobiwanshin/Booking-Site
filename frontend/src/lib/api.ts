@@ -260,11 +260,8 @@ export const purchaseTicket = async (
   accessToken: string,
   eventId: string,
   ticketTypeId: string,
-  // optional quantity is accepted to match callers, but backend currently purchases a single ticket
-  _quantity?: number,
+  quantity?: number,
 ): Promise<void> => {
-  // reference to avoid unused-param lint error
-  void _quantity;
   const response = await fetch(
     `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
     {
@@ -273,6 +270,7 @@ export const purchaseTicket = async (
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ quantity: quantity || 1 }),
     },
   );
 
