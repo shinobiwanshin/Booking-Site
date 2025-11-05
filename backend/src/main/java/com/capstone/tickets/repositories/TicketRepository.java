@@ -22,4 +22,10 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
   Page<Ticket> findByPurchaserId(UUID purchaserId, Pageable pageable);
 
   Optional<Ticket> findByIdAndPurchaserId(UUID id, UUID purchaserId);
+
+  @Query("SELECT COUNT(t) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
+  long countByOrganizer(@Param("organizerId") UUID organizerId);
+
+  @Query("SELECT COALESCE(SUM(tt.price), 0) FROM Ticket t JOIN t.ticketType tt JOIN tt.event e WHERE e.organizer.id = :organizerId")
+  Double sumRevenueByOrganizer(@Param("organizerId") UUID organizerId);
 }

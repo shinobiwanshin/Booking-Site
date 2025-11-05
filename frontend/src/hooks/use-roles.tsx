@@ -39,7 +39,9 @@ export const useRoles = (): UseRolesReturn => {
     try {
       const payload = jwtDecode<JwtPayload>(user?.access_token);
       const allRoles = payload.realm_access?.roles || [];
-      const filteredRoles = allRoles.filter((role) => role.startsWith("ROLE_"));
+      const filteredRoles = allRoles
+        .map((r) => (r.startsWith("ROLE_") ? r : `ROLE_${r}`))
+        .filter((role) => role.startsWith("ROLE_"));
       setRoles(filteredRoles);
       setIsOrganizer(filteredRoles.includes("ROLE_ORGANIZER"));
       setIsAttendee(filteredRoles.includes("ROLE_ATTENDEE"));

@@ -13,6 +13,17 @@ import {
   UpdateEventRequest,
 } from "@/domain/domain";
 
+export type OrganizerDashboardSummary = {
+  totalEvents: number;
+  publishedEvents: number;
+  draftEvents: number;
+  totalTicketTypes: number;
+  totalTicketsAvailable: number;
+  totalTicketsSold: number;
+  totalRevenue: number;
+  totalAttendances: number;
+};
+
 export const createEvent = async (
   accessToken: string,
   request: CreateEventRequest,
@@ -341,4 +352,29 @@ export const validateTicket = async (
   }
 
   return responseBody as Promise<TicketValidationResponse>;
+};
+
+export const getOrganizerDashboardSummary = async (
+  accessToken: string,
+): Promise<OrganizerDashboardSummary> => {
+  const response = await fetch(`/api/v1/dashboard/summary`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    if (isErrorResponse(responseBody)) {
+      throw new Error(responseBody.error);
+    } else {
+      console.error(JSON.stringify(responseBody));
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  return responseBody as OrganizerDashboardSummary;
 };

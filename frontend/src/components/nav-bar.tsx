@@ -27,7 +27,12 @@ const NavBar: React.FC = () => {
               </Link>
             </h1>
             <div className="text-gray-300 flex gap-8">
-              {isOrganizer && <Link to="/dashboard/events">Events</Link>}
+              {isOrganizer && (
+                <>
+                  <Link to="/dashboard/events">Events</Link>
+                  <Link to="/dashboard/insights">Dashboard</Link>
+                </>
+              )}
               <Link to="/dashboard/tickets">Tickets</Link>
             </div>
           </div>

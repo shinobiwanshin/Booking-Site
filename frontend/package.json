@@ -32,6 +32,8 @@
     "jspdf": "^3.0.3",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.503.0",
+    "recharts": "^2.12.7",
+    "framer-motion": "^11.3.19",
     "oidc-client-ts": "^3.2.0",
     "react": "^19.0.0",
     "react-day-picker": "^8.10.1",
