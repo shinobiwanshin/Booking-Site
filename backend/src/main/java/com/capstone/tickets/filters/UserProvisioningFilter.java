@@ -33,12 +33,23 @@ public class UserProvisioningFilter extends OncePerRequestFilter {
         && authentication.isAuthenticated()
         && authentication.getPrincipal() instanceof Jwt jwt) {
 
-      UUID keycloakId = UUID.fromString(jwt.getSubject());
+      String subject = jwt.getSubject();
+      UUID userId;
 
-      if (!userRepository.existsById(keycloakId)) {
+      // Try to parse subject as UUID; if it fails, generate a deterministic UUID from
+      // the subject
+      try {
+        userId = UUID.fromString(subject);
+      } catch (IllegalArgumentException e) {
+        // Subject is not a UUID (e.g., email or username from OAuth provider)
+        // Generate a deterministic UUID v5 from the subject string
+        userId = UUID.nameUUIDFromBytes(subject.getBytes());
+      }
+
+      if (!userRepository.existsById(userId)) {
 
         User user = new User();
-        user.setId(keycloakId);
+        user.setId(userId);
         user.setName(jwt.getClaimAsString("preferred_username"));
         user.setEmail(jwt.getClaimAsString("email"));
 

@@ -129,7 +129,10 @@ const DashboardInsightsPage: React.FC = () => {
                     contentStyle={{
                       background: "#111827",
                       border: "1px solid #374151",
+                      color: "#ffffff",
                     }}
+                    labelStyle={{ color: "#ffffff" }}
+                    itemStyle={{ color: "#ffffff" }}
                   />
                   <Pie
                     data={[
@@ -170,7 +173,10 @@ const DashboardInsightsPage: React.FC = () => {
                     contentStyle={{
                       background: "#111827",
                       border: "1px solid #374151",
+                      color: "#ffffff",
                     }}
+                    labelStyle={{ color: "#ffffff" }}
+                    itemStyle={{ color: "#ffffff" }}
                   />
                   <Pie
                     data={[

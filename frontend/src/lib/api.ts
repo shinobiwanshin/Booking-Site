@@ -226,12 +226,45 @@ export const getPublishedEvent = async (
   return responseBody as PublishedEventDetails;
 };
 
+// export const purchaseTicket = async (
+//   accessToken: string,
+//   eventId: string,
+//   ticketTypeId: string,
+//   quantity: number, // Add quantity as a parameter
+// ): Promise<void> => {
+//   const response = await fetch(
+//     `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
+//     {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         quantity, // Include quantity in the request body
+//       }),
+//     },
+//   );
+
+//   if (!response.ok) {
+//     const responseBody = await response.json();
+//     if (isErrorResponse(responseBody)) {
+//       throw new Error(responseBody.error);
+//     } else {
+//       console.error(JSON.stringify(responseBody));
+//       throw new Error("An unknown error occurred");
+//     }
+//   }
+// };
 export const purchaseTicket = async (
   accessToken: string,
   eventId: string,
   ticketTypeId: string,
-  quantity: number, // Add quantity as a parameter
+  // optional quantity is accepted to match callers, but backend currently purchases a single ticket
+  _quantity?: number,
 ): Promise<void> => {
+  // reference to avoid unused-param lint error
+  void _quantity;
   const response = await fetch(
     `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
     {
@@ -240,20 +273,25 @@ export const purchaseTicket = async (
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        quantity, // Include quantity in the request body
-      }),
     },
   );
 
   if (!response.ok) {
-    const responseBody = await response.json();
-    if (isErrorResponse(responseBody)) {
-      throw new Error(responseBody.error);
-    } else {
-      console.error(JSON.stringify(responseBody));
-      throw new Error("An unknown error occurred");
+    // Some error responses may have empty bodies (e.g., 403 with no JSON).
+    // Safely read text and parse if present.
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const text = await response.text();
+      if (text) {
+        const maybeJson = JSON.parse(text);
+        if (isErrorResponse(maybeJson)) {
+          message = maybeJson.error;
+        }
+      }
+    } catch {
+      // ignore JSON parse errors and use default message
     }
+    throw new Error(message);
   }
 };
 
