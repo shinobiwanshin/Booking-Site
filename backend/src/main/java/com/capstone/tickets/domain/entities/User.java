@@ -1,8 +1,11 @@
 package com.capstone.tickets.domain.entities;
 
+import com.capstone.tickets.domain.enums.Role;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -39,23 +42,19 @@ public class User {
   @Column(name = "email", nullable = false)
   private String email;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
+  private Role role = Role.ATTENDEE;
+
   @OneToMany(mappedBy = "organizer", cascade = CascadeType.ALL)
   private List<Event> organizedEvents = new ArrayList<>();
 
   @ManyToMany
-  @JoinTable(
-      name = "user_attending_events",
-      joinColumns = @JoinColumn(name = "user_id"),
-      inverseJoinColumns = @JoinColumn(name = "event_id")
-  )
+  @JoinTable(name = "user_attending_events", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "event_id"))
   private List<Event> attendingEvents = new ArrayList<>();
 
   @ManyToMany
-  @JoinTable(
-      name = "user_staffing_events",
-      joinColumns = @JoinColumn(name = "user_id"),
-      inverseJoinColumns = @JoinColumn(name = "event_id")
-  )
+  @JoinTable(name = "user_staffing_events", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "event_id"))
   private List<Event> staffingEvents = new ArrayList<>();
 
   @CreatedDate
@@ -73,12 +72,12 @@ public class User {
     }
     User user = (User) o;
     return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(email,
-        user.email) && Objects.equals(createdAt, user.createdAt) && Objects.equals(updatedAt,
-        user.updatedAt);
+        user.email) && role == user.role && Objects.equals(createdAt, user.createdAt) && Objects.equals(updatedAt,
+            user.updatedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, email, createdAt, updatedAt);
+    return Objects.hash(id, name, email, role, createdAt, updatedAt);
   }
 }

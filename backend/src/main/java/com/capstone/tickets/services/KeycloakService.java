@@ -1,0 +1,273 @@
+package com.capstone.tickets.services;
+
+import com.capstone.tickets.domain.dto.RegistrationRequest;
+import com.capstone.tickets.domain.enums.Role;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class KeycloakService {
+
+    @Value("${keycloak.admin.url:http://localhost:9090}")
+    private String keycloakAdminUrl;
+
+    @Value("${keycloak.realm:event-ticket-platform}")
+    private String realm;
+
+    @Value("${keycloak.admin.username:admin}")
+    private String adminUsername;
+
+    @Value("${keycloak.admin.password:admin}")
+    private String adminPassword;
+
+    private final RestTemplate restTemplate;
+
+    /**
+     * Creates a new user in Keycloak with the given registration details.
+     * Returns the UUID of the created user.
+     */
+    public UUID createKeycloakUser(RegistrationRequest request) {
+        try {
+            // Get admin access token
+            String accessToken = getAdminAccessToken();
+
+            // Generate UUID for the new user
+            UUID userId = UUID.randomUUID();
+
+            // Prepare user creation request
+            Map<String, Object> keycloakUser = new HashMap<>();
+            keycloakUser.put("id", userId.toString());
+            keycloakUser.put("username", request.username());
+            keycloakUser.put("email", request.email());
+            keycloakUser.put("firstName", request.name().split(" ")[0]);
+            if (request.name().split(" ").length > 1) {
+                keycloakUser.put("lastName", request.name().substring(request.name().indexOf(" ") + 1));
+            }
+            keycloakUser.put("enabled", true);
+            keycloakUser.put("emailVerified", true);
+
+            // Add credentials
+            Map<String, Object> credential = new HashMap<>();
+            credential.put("type", "password");
+            credential.put("value", request.password());
+            credential.put("temporary", false);
+            keycloakUser.put("credentials", List.of(credential));
+
+            // Add role as attribute
+            Map<String, List<String>> attributes = new HashMap<>();
+            attributes.put("role", List.of(request.role().name()));
+            keycloakUser.put("attributes", attributes);
+
+            // Create user in Keycloak
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(keycloakUser, headers);
+
+            String url = String.format("%s/admin/realms/%s/users", keycloakAdminUrl, realm);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    String.class);
+
+            log.info("Successfully created Keycloak user: {} with ID: {}", request.username(), userId);
+
+            // Small delay to ensure user is fully persisted in Keycloak
+            Thread.sleep(1000);
+
+            // Verify the user was created and get actual ID from Keycloak
+            UUID actualUserId = getUserIdByUsername(request.username(), accessToken);
+            if (actualUserId == null) {
+                log.warn("Could not find user {} in Keycloak after creation. Using generated ID.", request.username());
+                actualUserId = userId;
+            } else if (!actualUserId.equals(userId)) {
+                log.warn("Keycloak assigned different ID {} instead of requested ID {} for user {}",
+                        actualUserId, userId, request.username());
+                userId = actualUserId;
+            }
+
+            // Assign realm role to the user
+            assignRealmRoleToUser(userId, request.role(), accessToken);
+
+            return userId;
+
+        } catch (Exception e) {
+            log.error("Failed to create Keycloak user: {}", request.username(), e);
+            throw new RuntimeException("Failed to create user in authentication system: " + e.getMessage(), e);
+        }
+    }
+
+    private String getAdminAccessToken() {
+        try {
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("grant_type", "password");
+            requestBody.put("client_id", "admin-cli");
+            requestBody.put("username", adminUsername);
+            requestBody.put("password", adminPassword);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            StringBuilder formData = new StringBuilder();
+            requestBody.forEach((key, value) -> {
+                if (formData.length() > 0) {
+                    formData.append("&");
+                }
+                formData.append(key).append("=").append(value);
+            });
+
+            HttpEntity<String> entity = new HttpEntity<>(formData.toString(), headers);
+
+            String url = String.format("%s/realms/master/protocol/openid-connect/token", keycloakAdminUrl);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class);
+
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody != null && responseBody.containsKey("access_token")) {
+                return (String) responseBody.get("access_token");
+            }
+
+            throw new RuntimeException("Failed to get admin access token from Keycloak");
+
+        } catch (Exception e) {
+            log.error("Failed to get Keycloak admin access token", e);
+            throw new RuntimeException("Failed to authenticate with Keycloak admin", e);
+        }
+    }
+
+    /**
+     * Assigns a realm role to a user in Keycloak
+     */
+    private void assignRealmRoleToUser(UUID userId, Role role, String accessToken) {
+        int maxRetries = 3;
+        int retryCount = 0;
+        Exception lastException = null;
+
+        while (retryCount < maxRetries) {
+            try {
+                // Get the role representation from Keycloak
+                String roleName = "ROLE_" + role.name();
+                Map<String, Object> roleRepresentation = getRealmRole(roleName, accessToken);
+
+                if (roleRepresentation == null) {
+                    log.warn("Role {} not found in Keycloak realm {}. Skipping role assignment.", roleName, realm);
+                    return;
+                }
+
+                // Assign the role to the user
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(accessToken);
+
+                HttpEntity<List<Map<String, Object>>> entity = new HttpEntity<>(List.of(roleRepresentation), headers);
+
+                String url = String.format("%s/admin/realms/%s/users/%s/role-mappings/realm",
+                        keycloakAdminUrl, realm, userId.toString());
+
+                restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+                log.info("Successfully assigned role {} to user {}", roleName, userId);
+                return; // Success, exit the method
+
+            } catch (Exception e) {
+                lastException = e;
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    log.warn("Failed to assign role to user {} (attempt {}/{}). Retrying...", userId, retryCount,
+                            maxRetries);
+                    try {
+                        Thread.sleep(1000); // Wait 1 second before retry
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // All retries failed
+        log.error("Failed to assign role to user {} after {} attempts", userId, maxRetries, lastException);
+        // Don't throw exception - user is created, role assignment failure shouldn't
+        // block registration
+        log.warn("User {} created but role assignment failed. Manual role assignment may be required.", userId);
+    }
+
+    /**
+     * Retrieves a realm role by name from Keycloak
+     */
+    private Map<String, Object> getRealmRole(String roleName, String accessToken) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = String.format("%s/admin/realms/%s/roles/%s",
+                    keycloakAdminUrl, realm, roleName);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    Map.class);
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            log.error("Failed to get realm role: {}", roleName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves user ID by username from Keycloak
+     */
+    private UUID getUserIdByUsername(String username, String accessToken) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = String.format("%s/admin/realms/%s/users?username=%s&exact=true",
+                    keycloakAdminUrl, realm, username);
+
+            ResponseEntity<List> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    List.class);
+
+            List<Map<String, Object>> users = response.getBody();
+            if (users != null && !users.isEmpty()) {
+                String id = (String) users.get(0).get("id");
+                return UUID.fromString(id);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            log.error("Failed to get user ID for username: {}", username, e);
+            return null;
+        }
+    }
+}

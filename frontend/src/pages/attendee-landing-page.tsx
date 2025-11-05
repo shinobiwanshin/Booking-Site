@@ -100,6 +100,12 @@ const AttendeeLandingPage: React.FC = () => {
           </div>
         ) : (
           <div className="flex gap-4">
+            <Button
+              className="cursor-pointer bg-gray-800 hover:bg-gray-700"
+              onClick={() => navigate("/signup")}
+            >
+              Sign Up
+            </Button>
             <Button className="cursor-pointer" onClick={() => signinRedirect()}>
               Log in
             </Button>

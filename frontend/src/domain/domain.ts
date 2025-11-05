@@ -12,6 +12,11 @@ export const isErrorResponse = (obj: any): obj is ErrorResponse => {
   );
 };
 
+export enum Role {
+  ATTENDEE = "ATTENDEE",
+  ORGANIZER = "ORGANIZER",
+}
+
 export enum EventStatusEnum {
   DRAFT = "DRAFT",
   PUBLISHED = "PUBLISHED",

@@ -43,9 +43,18 @@ const CallbackPage: React.FC = () => {
     }
 
     if (isAuthenticated) {
-      const redirectPath = localStorage.getItem("redirectPath") || "/"; // Default to main page
-      localStorage.removeItem("redirectPath");
-      navigate(redirectPath); // Redirect to the stored path or main page
+      // Check if user is new (just registered)
+      const isNewUser = localStorage.getItem("isNewUser");
+
+      if (isNewUser === "true") {
+        // Redirect to welcome/onboarding page
+        navigate("/welcome");
+      } else {
+        // Normal redirect behavior
+        const redirectPath = localStorage.getItem("redirectPath") || "/";
+        localStorage.removeItem("redirectPath");
+        navigate(redirectPath);
+      }
     }
   }, [isLoading, isAuthenticated, navigate]);
 

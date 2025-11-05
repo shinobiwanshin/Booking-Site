@@ -20,7 +20,12 @@ public class SecurityConfig {
                         JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
                 http
                                 .authorizeHttpRequests(authorize -> authorize
+                                                // Allow OPTIONS for CORS preflight
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/published-events/**")
+                                                .permitAll()
+                                                // Allow unauthenticated access to registration endpoint
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/register")
                                                 .permitAll()
                                                 // Allow attendees (any authenticated user) to purchase tickets
                                                 .requestMatchers(

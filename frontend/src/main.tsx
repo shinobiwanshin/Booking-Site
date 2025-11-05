@@ -7,6 +7,8 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import OrganizersLandingPage from "./pages/organizers-landing-page.tsx";
 import DashboardManageEventPage from "./pages/dashboard-manage-event-page.tsx";
 import LoginPage from "./pages/login-page.tsx";
+import SignUpPage from "./pages/signup-page.tsx";
+import WelcomeOnboardingPage from "./pages/welcome-onboarding-page.tsx";
 import ProtectedRoute from "./components/protected-route.tsx";
 import CallbackPage from "./pages/callback-page.tsx";
 import DashboardListEventsPage from "./pages/dashboard-list-events-page.tsx";
@@ -31,6 +33,18 @@ const router = createBrowserRouter([
   {
     path: "/login",
     Component: LoginPage,
+  },
+  {
+    path: "/signup",
+    Component: SignUpPage,
+  },
+  {
+    path: "/welcome",
+    element: (
+      <ProtectedRoute>
+        <WelcomeOnboardingPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/events/:id",
