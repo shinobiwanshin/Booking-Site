@@ -53,9 +53,19 @@ const LoginPage: React.FC = () => {
       await login(loginData.username, loginData.password);
       navigate("/");
     } catch (err) {
-      setLoginError(
-        err instanceof Error ? err.message : "Invalid username or password",
-      );
+      console.error("Login error details:", err);
+      if (err instanceof Error) {
+        // Check for network errors
+        if (err.message.includes("fetch")) {
+          setLoginError(
+            "Unable to connect to server. Please make sure the backend is running on http://localhost:8080",
+          );
+        } else {
+          setLoginError(err.message);
+        }
+      } else {
+        setLoginError("Invalid username or password. Please try again.");
+      }
     } finally {
       setIsLoggingIn(false);
     }

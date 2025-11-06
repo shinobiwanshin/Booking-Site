@@ -286,32 +286,36 @@ public class KeycloakService {
      * Send password reset email to a user via Keycloak
      * 
      * @param email The email address to send the reset link to
+     * @return Username if user found, null otherwise (for logging purposes only,
+     *         not exposed to client)
      */
-    public void sendPasswordResetEmail(String email) {
+    public String sendPasswordResetEmail(String email) {
         try {
             // Get admin access token
             String accessToken = getAdminAccessToken();
 
-            // Find user by email
-            UUID userId = getUserIdByEmail(email, accessToken);
+            // Find user by email and get full details
+            Map<String, Object> userDetails = getUserDetailsByEmail(email, accessToken);
 
-            if (userId == null) {
+            if (userDetails == null) {
                 log.warn("No user found with email: {}", email);
-                return; // Don't throw exception to prevent email enumeration
+                return null; // Don't throw exception to prevent email enumeration
             }
 
-            // Send password reset email via Keycloak
+            String userId = (String) userDetails.get("id");
+            String username = (String) userDetails.get("username");
+
+            // Send password reset email via Keycloak using execute-actions-email
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            // Send array of actions with just UPDATE_PASSWORD
+            String jsonBody = "[\"UPDATE_PASSWORD\"]";
+            HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
 
             String url = String.format("%s/admin/realms/%s/users/%s/execute-actions-email",
-                    keycloakAdminUrl, realm, userId.toString());
-
-            // Add query parameter for the actions
-            url += "?actions=UPDATE_PASSWORD";
+                    keycloakAdminUrl, realm, userId);
 
             restTemplate.exchange(
                     url,
@@ -319,11 +323,132 @@ public class KeycloakService {
                     entity,
                     String.class);
 
-            log.info("Password reset email sent successfully for user with email: {}", email);
+            log.info("Password reset email sent successfully for user: {} with email: {}", username, email);
+            return username; // Return username for logging/notification purposes
 
         } catch (Exception e) {
             log.error("Failed to send password reset email for: {}", email, e);
             // Don't throw exception to prevent email enumeration
+            return null;
+        }
+    }
+
+    /**
+     * Generate password reset link for a user (returns the Keycloak reset page URL)
+     * This doesn't send an email, just generates the link to be used in custom
+     * emails
+     * 
+     * @param email The email address
+     * @return Password reset link or null if user not found
+     */
+    public String generatePasswordResetLink(String email) {
+        try {
+            // Get admin access token
+            String accessToken = getAdminAccessToken();
+
+            // Find user by email
+            Map<String, Object> userDetails = getUserDetailsByEmail(email, accessToken);
+
+            if (userDetails == null) {
+                log.warn("No user found with email: {}", email);
+                return null;
+            }
+
+            String userId = (String) userDetails.get("id");
+
+            // Generate the reset credentials URL
+            // This URL will be sent via Keycloak's execute-actions-email endpoint
+            // but we'll capture it and send it in our custom email
+            String resetLink = String.format("%s/realms/%s/account/password",
+                    keycloakAdminUrl.replace("/admin", ""), realm);
+
+            log.info("Generated password reset link for email: {}", email);
+            return resetLink;
+
+        } catch (Exception e) {
+            log.error("Failed to generate password reset link for: {}", email, e);
+            return null;
+        }
+    }
+
+    /**
+     * Update user password in Keycloak
+     * 
+     * @param email       User's email
+     * @param newPassword New password
+     */
+    public void updateUserPassword(String email, String newPassword) {
+        try {
+            // Get admin access token
+            String accessToken = getAdminAccessToken();
+
+            // Find user by email
+            Map<String, Object> userDetails = getUserDetailsByEmail(email, accessToken);
+
+            if (userDetails == null) {
+                throw new RuntimeException("User not found");
+            }
+
+            String userId = (String) userDetails.get("id");
+
+            // Update password
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // Create password credential
+            String jsonBody = String.format(
+                    "{\"type\":\"password\",\"value\":\"%s\",\"temporary\":false}",
+                    newPassword);
+
+            HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+
+            String url = String.format("%s/admin/realms/%s/users/%s/reset-password",
+                    keycloakAdminUrl, realm, userId);
+
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    entity,
+                    String.class);
+
+            log.info("Password updated successfully for user with email: {}", email);
+
+        } catch (Exception e) {
+            log.error("Failed to update password for email: {}", email, e);
+            throw new RuntimeException("Failed to update password: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Retrieves full user details by email from Keycloak
+     */
+    private Map<String, Object> getUserDetailsByEmail(String email, String accessToken) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = String.format("%s/admin/realms/%s/users?email=%s&exact=true",
+                    keycloakAdminUrl, realm, email);
+
+            ResponseEntity<List> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    List.class);
+
+            List<Map<String, Object>> users = response.getBody();
+            if (users != null && !users.isEmpty()) {
+                return users.get(0);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            log.error("Failed to get user details for email: {}", email, e);
+            return null;
         }
     }
 

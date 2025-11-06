@@ -4,12 +4,15 @@ import com.capstone.tickets.domain.dto.LoginRequest;
 import com.capstone.tickets.domain.dto.LoginResponse;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
 import com.capstone.tickets.domain.dto.RegistrationResponse;
+import com.capstone.tickets.domain.entities.PasswordResetToken;
 import com.capstone.tickets.domain.entities.User;
+import com.capstone.tickets.repositories.PasswordResetTokenRepository;
 import com.capstone.tickets.repositories.UserRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,11 @@ public class AuthService {
 
     private final KeycloakService keycloakService;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Transactional
     public RegistrationResponse registerUser(RegistrationRequest request) {
@@ -62,18 +70,78 @@ public class AuthService {
      * 
      * @param email The email address to send the reset link to
      */
+    @Transactional
     public void sendPasswordResetEmail(String email) {
         log.info("Attempting to send password reset email to: {}", email);
 
         try {
-            // Use Keycloak's built-in password reset functionality
-            keycloakService.sendPasswordResetEmail(email);
-            log.info("Password reset email sent successfully to: {}", email);
+            // Find user in database
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            if (user == null) {
+                log.warn("No user found with email: {}", email);
+                return; // Don't throw exception to prevent email enumeration
+            }
+
+            // Delete any existing tokens for this email
+            passwordResetTokenRepository.deleteByEmail(email);
+
+            // Generate new token
+            String token = UUID.randomUUID().toString();
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .token(token)
+                    .email(email)
+                    .expiryDate(LocalDateTime.now().plusHours(24))
+                    .used(false)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            passwordResetTokenRepository.save(resetToken);
+
+            // Create reset link pointing to frontend
+            String resetLink = String.format("%s/reset-password?token=%s", frontendUrl, token);
+
+            // Send custom HTML email
+            emailService.sendPasswordResetEmail(email, resetLink, user.getName());
+            log.info("Password reset email sent successfully to: {} (username: {})", email, user.getName());
+
         } catch (Exception e) {
             log.error("Failed to send password reset email to: {}", email, e);
             // Don't throw exception to prevent email enumeration attacks
-            // The controller will return a generic success message
         }
+    }
+
+    /**
+     * Reset user password using token
+     * 
+     * @param token       The reset token
+     * @param newPassword The new password
+     */
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        log.info("Attempting to reset password with token");
+
+        // Find token
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+
+        // Check if token is expired
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Reset token has expired");
+        }
+
+        // Check if token already used
+        if (resetToken.isUsed()) {
+            throw new RuntimeException("Reset token has already been used");
+        }
+
+        // Update password in Keycloak
+        keycloakService.updateUserPassword(resetToken.getEmail(), newPassword);
+
+        // Mark token as used
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        log.info("Password reset successfully for email: {}", resetToken.getEmail());
     }
 
     /**

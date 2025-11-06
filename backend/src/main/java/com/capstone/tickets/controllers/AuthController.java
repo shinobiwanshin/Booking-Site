@@ -5,6 +5,7 @@ import com.capstone.tickets.domain.dto.LoginRequest;
 import com.capstone.tickets.domain.dto.LoginResponse;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
 import com.capstone.tickets.domain.dto.RegistrationResponse;
+import com.capstone.tickets.domain.dto.ResetPasswordRequest;
 import com.capstone.tickets.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,23 @@ public class AuthController {
             // Return success message even on error to prevent email enumeration
             return ResponseEntity.ok(Map.of(
                     "message", "If an account exists with that email, you will receive password reset instructions."));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        log.info("Received reset password request");
+
+        try {
+            authService.resetPassword(request.token(), request.newPassword());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Your password has been reset successfully. You can now login with your new password."));
+        } catch (Exception e) {
+            log.error("Password reset failed", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

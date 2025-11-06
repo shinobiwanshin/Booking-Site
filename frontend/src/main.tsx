@@ -21,6 +21,7 @@ import DashboardViewTicketPage from "./pages/dashboard-view-ticket-page.tsx";
 import DashboardValidateQrPage from "./pages/dashboard-validate-qr-page.tsx";
 import DashboardInsightsPage from "./pages/dashboard-insights-page.tsx";
 import OrganizerRoute from "./components/organizer-route.tsx";
+import ResetPasswordPage from "./pages/reset-password-page.tsx";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     Component: SignUpPage,
+  },
+  {
+    path: "/reset-password",
+    Component: ResetPasswordPage,
   },
   {
     path: "/welcome",

@@ -31,6 +31,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password")
                                                 .permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/auth/reset-password")
+                                .permitAll()
                                                 // Allow temporary admin endpoints for role management
                                                 .requestMatchers("/api/admin/**")
                                                 .permitAll()
