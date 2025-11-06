@@ -31,6 +31,9 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password")
                                                 .permitAll()
+                                                // Allow temporary admin endpoints for role management
+                                                .requestMatchers("/api/admin/**")
+                                                .permitAll()
                                                 // Allow attendees (any authenticated user) to purchase tickets
                                                 .requestMatchers(
                                                                 new AntPathRequestMatcher(

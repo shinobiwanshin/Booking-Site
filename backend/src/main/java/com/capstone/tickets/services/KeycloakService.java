@@ -452,4 +452,57 @@ public class KeycloakService {
             return null;
         }
     }
+
+    /**
+     * Public method to assign a role to an existing user
+     * Used by AdminService to sync roles
+     */
+    public void assignRoleToExistingUser(UUID userId, Role role) {
+        try {
+            String accessToken = getAdminAccessToken();
+            assignRealmRoleToUser(userId, role, accessToken);
+        } catch (Exception e) {
+            log.error("Failed to assign role to user: {}", userId, e);
+            throw new RuntimeException("Failed to assign role: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Creates a realm role in Keycloak if it doesn't exist
+     * 
+     * @return true if role was created, false if it already existed
+     */
+    public boolean createRealmRoleIfNotExists(String roleName) {
+        try {
+            String accessToken = getAdminAccessToken();
+
+            // Check if role exists
+            Map<String, Object> existingRole = getRealmRole(roleName, accessToken);
+            if (existingRole != null) {
+                log.info("Role {} already exists in Keycloak", roleName);
+                return false;
+            }
+
+            // Create the role
+            Map<String, Object> roleData = new HashMap<>();
+            roleData.put("name", roleName);
+            roleData.put("description", "Application role: " + roleName);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(roleData, headers);
+
+            String url = String.format("%s/admin/realms/%s/roles", keycloakAdminUrl, realm);
+            restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            log.info("Successfully created role {} in Keycloak", roleName);
+            return true;
+
+        } catch (Exception e) {
+            log.error("Failed to create role: {}", roleName, e);
+            throw new RuntimeException("Failed to create role: " + e.getMessage(), e);
+        }
+    }
 }
