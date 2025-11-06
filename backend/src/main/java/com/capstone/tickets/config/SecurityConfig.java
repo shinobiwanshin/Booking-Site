@@ -24,8 +24,12 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/published-events/**")
                                                 .permitAll()
-                                                // Allow unauthenticated access to registration endpoint
+                                                // Allow unauthenticated access to authentication endpoints
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/register")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/login")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password")
                                                 .permitAll()
                                                 // Allow attendees (any authenticated user) to purchase tickets
                                                 .requestMatchers(

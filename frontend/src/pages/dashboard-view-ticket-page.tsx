@@ -3,7 +3,7 @@ import { getTicket, getTicketQr, getTicketPdf } from "@/lib/api";
 import { format } from "date-fns";
 import { Calendar, DollarSign, MapPin, Tag, Download } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useParams } from "react-router";
 
 const DashboardViewTicketPage: React.FC = () => {
@@ -16,7 +16,7 @@ const DashboardViewTicketPage: React.FC = () => {
   const { isLoading, user } = useAuth();
 
   useEffect(() => {
-    if (isLoading || !user?.access_token || !id) return;
+    if (isLoading || !user?.accessToken || !id) return;
 
     const fetchData = async (accessToken: string, id: string) => {
       try {
@@ -37,12 +37,12 @@ const DashboardViewTicketPage: React.FC = () => {
       }
     };
 
-    fetchData(user.access_token, id);
+    fetchData(user.accessToken, id);
 
     return () => {
       if (qrCodeUrl) URL.revokeObjectURL(qrCodeUrl);
     };
-  }, [user?.access_token, isLoading, id]);
+  }, [user?.accessToken, isLoading, id]);
 
   // NOTE: getStatusColor is no longer used in the PDF generation, but kept for the UI.
   const getStatusColor = (status: TicketStatus) => {
@@ -57,10 +57,10 @@ const DashboardViewTicketPage: React.FC = () => {
   };
 
   const downloadPdf = async () => {
-    if (!ticket || isLoading || !user?.access_token) return;
+    if (!ticket || isLoading || !user?.accessToken) return;
 
     try {
-      const blob = await getTicketPdf(user.access_token, ticket.id);
+      const blob = await getTicketPdf(user.accessToken, ticket.id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

@@ -1,6 +1,8 @@
 package com.capstone.tickets.controllers;
 
 import com.capstone.tickets.domain.dto.ForgotPasswordRequest;
+import com.capstone.tickets.domain.dto.LoginRequest;
+import com.capstone.tickets.domain.dto.LoginResponse;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
 import com.capstone.tickets.domain.dto.RegistrationResponse;
 import com.capstone.tickets.services.AuthService;
@@ -61,6 +63,20 @@ public class AuthController {
             // Return success message even on error to prevent email enumeration
             return ResponseEntity.ok(Map.of(
                     "message", "If an account exists with that email, you will receive password reset instructions."));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Received login request for username: {}", request.username());
+
+        try {
+            LoginResponse response = authService.loginUser(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Login failed for username: {}", request.username(), e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid username or password"));
         }
     }
 }

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { purchaseTicket } from "@/lib/api";
 import { CheckCircle, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useParams } from "react-router";
 
 const PurchaseTicketPage: React.FC = () => {
@@ -24,15 +24,15 @@ const PurchaseTicketPage: React.FC = () => {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [isPurchaseSuccess]);
+  }, [isPurchaseSuccess, navigate]);
 
   const handlePurchase = async () => {
-    if (isLoading || !user?.access_token || !eventId || !ticketTypeId) {
+    if (isLoading || !user?.accessToken || !eventId || !ticketTypeId) {
       return;
     }
     try {
       // Call the API to purchase tickets with quantity
-      await purchaseTicket(user.access_token, eventId, ticketTypeId, quantity);
+      await purchaseTicket(user.accessToken, eventId, ticketTypeId, quantity);
       setIsPurchaseASuccess(true);
     } catch (err) {
       if (err instanceof Error) {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -14,12 +16,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LogIn, AlertCircle } from "lucide-react";
 
 const LoginPage: React.FC = () => {
-  const { isLoading, isAuthenticated, signinRedirect } = useAuth();
+  const { isLoading, isAuthenticated, signinRedirect, login } = useAuth();
   const navigate = useNavigate();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
   const [error, setError] = useState("");
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: "",
+  });
+  const [loginError, setLoginError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (isLoading) {
@@ -30,8 +38,27 @@ const LoginPage: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, navigate]);
 
-  const handleLogin = () => {
-    signinRedirect();
+  const handleCustomLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    setIsLoggingIn(true);
+
+    if (!loginData.username || !loginData.password) {
+      setLoginError("Please enter both username and password");
+      setIsLoggingIn(false);
+      return;
+    }
+
+    try {
+      await login(loginData.username, loginData.password);
+      navigate("/");
+    } catch (err) {
+      setLoginError(
+        err instanceof Error ? err.message : "Invalid username or password",
+      );
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleLoginWithProvider = (provider: "google" | "github") => {
@@ -175,12 +202,68 @@ const LoginPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            onClick={handleLogin}
-            className="w-full bg-purple-600 hover:bg-purple-700"
-          >
-            Sign in with Keycloak
-          </Button>
+          {loginError && (
+            <Alert
+              variant="destructive"
+              className="mb-4 bg-red-900/20 border-red-700"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleCustomLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-white">
+                Username or Email
+              </Label>
+              <Input
+                id="username"
+                placeholder="Enter your username or email"
+                value={loginData.username}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, username: e.target.value })
+                }
+                className="bg-gray-800 border-gray-700 text-white"
+                disabled={isLoggingIn}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-white">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={loginData.password}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, password: e.target.value })
+                }
+                className="bg-gray-800 border-gray-700 text-white"
+                disabled={isLoggingIn}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <button
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-purple-400 hover:text-purple-300 underline"
+              disabled={isLoggingIn}
+            >
+              Forgot your password?
+            </button>
+          </div>
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
@@ -199,6 +282,7 @@ const LoginPage: React.FC = () => {
               variant="outline"
               className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
               onClick={() => handleLoginWithProvider("google")}
+              disabled={isLoggingIn}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -225,6 +309,7 @@ const LoginPage: React.FC = () => {
               variant="outline"
               className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
               onClick={() => handleLoginWithProvider("github")}
+              disabled={isLoggingIn}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -235,15 +320,6 @@ const LoginPage: React.FC = () => {
               GitHub
             </Button>
           </div>
-
-          <div className="text-center mt-4">
-            <button
-              onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-purple-400 hover:text-purple-300 underline"
-            >
-              Forgot your password?
-            </button>
-          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-gray-400">
@@ -251,6 +327,7 @@ const LoginPage: React.FC = () => {
             <button
               onClick={() => navigate("/signup")}
               className="text-purple-400 hover:text-purple-300 underline"
+              disabled={isLoggingIn}
             >
               Sign up
             </button>

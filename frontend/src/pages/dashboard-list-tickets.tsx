@@ -6,7 +6,7 @@ import { SpringBootPagination, TicketSummary } from "@/domain/domain";
 import { listTickets } from "@/lib/api";
 import { AlertCircle, DollarSign, Tag, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
 
 const DashboardListTickets: React.FC = () => {
@@ -19,13 +19,13 @@ const DashboardListTickets: React.FC = () => {
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (isLoading || !user?.access_token) {
+    if (isLoading || !user?.accessToken) {
       return;
     }
 
     const doUseEffect = async () => {
       try {
-        setTickets(await listTickets(user.access_token, page));
+        setTickets(await listTickets(user.accessToken, page));
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -38,7 +38,7 @@ const DashboardListTickets: React.FC = () => {
     };
 
     doUseEffect();
-  }, [isLoading, user?.access_token, page]);
+  }, [isLoading, user?.accessToken, page]);
 
   if (error) {
     return (

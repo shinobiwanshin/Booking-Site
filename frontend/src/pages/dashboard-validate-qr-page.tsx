@@ -11,7 +11,7 @@ import {
 import { AlertCircle, Check, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { validateTicket } from "@/lib/api";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 
 const DashboardValidateQrPage: React.FC = () => {
   const { isLoading, user } = useAuth();
@@ -40,11 +40,11 @@ const DashboardValidateQrPage: React.FC = () => {
   };
 
   const handleValidate = async (id: string, method: TicketValidationMethod) => {
-    if (!user?.access_token) {
+    if (!user?.accessToken) {
       return;
     }
     try {
-      const response = await validateTicket(user.access_token, {
+      const response = await validateTicket(user.accessToken, {
         id,
         method,
       });
@@ -54,7 +54,7 @@ const DashboardValidateQrPage: React.FC = () => {
     }
   };
 
-  if (isLoading || !user?.access_token) {
+  if (isLoading || !user?.accessToken) {
     <p>Loading...</p>;
   }
 

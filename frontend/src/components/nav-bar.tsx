@@ -1,5 +1,6 @@
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,13 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { LogOut } from "lucide-react";
+import { LogOut, LogIn } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 const NavBar: React.FC = () => {
-  const { user, signoutRedirect } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { isOrganizer } = useRoles();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="bg-gray-950 border-b border-gray-800 text-white">
@@ -37,34 +44,42 @@ const NavBar: React.FC = () => {
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-gray-700">
-                  {user?.profile?.preferred_username?.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-56 bg-gray-900 border-gray-700 text-white"
-              align="end"
-            >
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">
-                  {user?.profile?.preferred_username}
-                </p>
-                <p className="text-sm text-gray-400">{user?.profile?.email}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="hover:bg-gray-800"
-                onClick={() => signoutRedirect()}
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gray-700">
+                    {user?.username?.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-56 bg-gray-900 border-gray-700 text-white"
+                align="end"
               >
-                <LogOut />
-                <span>Log Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuLabel className="font-normal">
+                  <p className="text-sm font-medium">{user?.username}</p>
+                  <p className="text-sm text-gray-400">{user?.role}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="hover:bg-gray-800"
+                  onClick={handleLogout}
+                >
+                  <LogOut />
+                  <span>Log Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              onClick={() => navigate("/login")}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Log In
+            </Button>
+          )}
         </div>
       </div>
     </div>

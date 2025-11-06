@@ -1,7 +1,7 @@
 import NavBar from "@/components/nav-bar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertCircle,
@@ -24,16 +24,16 @@ const DashboardInsightsPage: React.FC = () => {
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (isLoading || !user?.access_token) return;
+    if (isLoading || !user?.accessToken) return;
     const load = async () => {
       try {
-        setSummary(await getOrganizerDashboardSummary(user.access_token));
+        setSummary(await getOrganizerDashboardSummary(user.accessToken));
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unknown error");
       }
     };
     load();
-  }, [isLoading, user?.access_token]);
+  }, [isLoading, user?.accessToken]);
 
   if (error) {
     return (

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import AttendeeLandingPage from "./pages/attendee-landing-page.tsx";
 import { AuthProvider } from "react-oidc-context";
+import { AuthContextProvider } from "./contexts/auth-context.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import OrganizersLandingPage from "./pages/organizers-landing-page.tsx";
 import DashboardManageEventPage from "./pages/dashboard-manage-event-page.tsx";
@@ -145,7 +146,9 @@ const oidcConfig = {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider {...oidcConfig}>
-      <RouterProvider router={router} />
+      <AuthContextProvider>
+        <RouterProvider router={router} />
+      </AuthContextProvider>
     </AuthProvider>
   </StrictMode>,
 );

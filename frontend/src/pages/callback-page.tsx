@@ -30,7 +30,7 @@
 // export default CallbackPage;
 // filepath: /Users/amitabhanath/Documents/Booking-Capstone/frontend/src/pages/callback-page.tsx
 import { useEffect } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 
 const CallbackPage: React.FC = () => {

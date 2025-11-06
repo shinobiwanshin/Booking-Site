@@ -1,5 +1,7 @@
 package com.capstone.tickets.services;
 
+import com.capstone.tickets.domain.dto.LoginRequest;
+import com.capstone.tickets.domain.dto.LoginResponse;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
 import com.capstone.tickets.domain.dto.RegistrationResponse;
 import com.capstone.tickets.domain.entities.User;
@@ -71,6 +73,28 @@ public class AuthService {
             log.error("Failed to send password reset email to: {}", email, e);
             // Don't throw exception to prevent email enumeration attacks
             // The controller will return a generic success message
+        }
+    }
+
+    /**
+     * Authenticate user with Keycloak and return tokens
+     * 
+     * @param request Login credentials
+     * @return LoginResponse with access token and user info
+     */
+    public LoginResponse loginUser(LoginRequest request) {
+        log.info("Attempting to authenticate user: {}", request.username());
+
+        try {
+            // Authenticate with Keycloak and get tokens
+            LoginResponse response = keycloakService.authenticateUser(request);
+
+            log.info("Successfully authenticated user: {}", request.username());
+            return response;
+
+        } catch (Exception e) {
+            log.error("Failed to authenticate user: {}", request.username(), e);
+            throw new RuntimeException("Authentication failed: " + e.getMessage(), e);
         }
     }
 }

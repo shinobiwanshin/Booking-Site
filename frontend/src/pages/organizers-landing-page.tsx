@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "react-router";
 import { useNavigate } from "react-router";
 
 const OrganizersLandingPage: React.FC = () => {
-  const { isAuthenticated, isLoading, signinRedirect, signoutRedirect } =
-    useAuth();
+  const { isAuthenticated, isLoading, signoutRedirect } = useAuth();
 
   const navigate = useNavigate();
 
@@ -39,7 +39,10 @@ const OrganizersLandingPage: React.FC = () => {
             >
               Sign Up
             </Button>
-            <Button className="cursor-pointer" onClick={() => signinRedirect()}>
+            <Button
+              className="cursor-pointer"
+              onClick={() => navigate("/login")}
+            >
               Log in
             </Button>
           </div>

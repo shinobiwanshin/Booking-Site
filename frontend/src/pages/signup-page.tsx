@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertCircle, CheckCircle2, UserPlus } from "lucide-react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function SignUpPage() {
   const navigate = useNavigate();

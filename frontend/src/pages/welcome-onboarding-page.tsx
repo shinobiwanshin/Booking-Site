@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,9 +45,7 @@ export default function WelcomeOnboardingPage() {
 
     // Get user name from auth
     if (user) {
-      setUserName(
-        user.profile.name || user.profile.preferred_username || "there",
-      );
+      setUserName(user.username || "there");
     }
   }, [user, navigate]);
 

@@ -1,7 +1,11 @@
 package com.capstone.tickets.services;
 
+import com.capstone.tickets.domain.dto.LoginRequest;
+import com.capstone.tickets.domain.dto.LoginResponse;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
+import com.capstone.tickets.domain.entities.User;
 import com.capstone.tickets.domain.enums.Role;
+import com.capstone.tickets.repositories.UserRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +38,14 @@ public class KeycloakService {
     @Value("${keycloak.admin.password:admin}")
     private String adminPassword;
 
+    @Value("${keycloak.client.id:event-ticket-client}")
+    private String clientId;
+
+    @Value("${keycloak.client.secret:}")
+    private String clientSecret;
+
     private final RestTemplate restTemplate;
+    private final UserRepository userRepository;
 
     /**
      * Creates a new user in Keycloak with the given registration details.
@@ -345,6 +356,99 @@ public class KeycloakService {
 
         } catch (Exception e) {
             log.error("Failed to get user ID for email: {}", email, e);
+            return null;
+        }
+    }
+
+    /**
+     * Authenticate user with Keycloak using Direct Access Grant
+     * 
+     * @param request Login credentials
+     * @return LoginResponse with access token and user info
+     */
+    public LoginResponse authenticateUser(LoginRequest request) {
+        try {
+            // Prepare token request
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("grant_type", "password");
+            requestBody.put("client_id", clientId);
+            if (clientSecret != null && !clientSecret.isEmpty()) {
+                requestBody.put("client_secret", clientSecret);
+            }
+            requestBody.put("username", request.username());
+            requestBody.put("password", request.password());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            StringBuilder formData = new StringBuilder();
+            requestBody.forEach((key, value) -> {
+                if (formData.length() > 0) {
+                    formData.append("&");
+                }
+                formData.append(key).append("=").append(value);
+            });
+
+            HttpEntity<String> entity = new HttpEntity<>(formData.toString(), headers);
+
+            String url = String.format("%s/realms/%s/protocol/openid-connect/token", keycloakAdminUrl, realm);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class);
+
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody != null && responseBody.containsKey("access_token")) {
+                String accessToken = (String) responseBody.get("access_token");
+                String refreshToken = (String) responseBody.get("refresh_token");
+                Integer expiresIn = (Integer) responseBody.get("expires_in");
+
+                // Get user info from database
+                User user = getUserByUsername(request.username());
+
+                if (user == null) {
+                    throw new RuntimeException("User not found in database");
+                }
+
+                return new LoginResponse(
+                        accessToken,
+                        refreshToken,
+                        "Bearer",
+                        expiresIn != null ? expiresIn : 3600,
+                        request.username(),
+                        user.getEmail(),
+                        user.getRole());
+            }
+
+            throw new RuntimeException("Failed to get access token from Keycloak");
+
+        } catch (Exception e) {
+            log.error("Failed to authenticate user: {}", request.username(), e);
+            throw new RuntimeException("Authentication failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get user from database by username
+     */
+    private User getUserByUsername(String username) {
+        try {
+            // Get admin access token
+            String accessToken = getAdminAccessToken();
+
+            // Get user ID from Keycloak
+            UUID userId = getUserIdByUsername(username, accessToken);
+
+            if (userId == null) {
+                return null;
+            }
+
+            // Fetch user from database
+            return userRepository.findById(userId).orElse(null);
+
+        } catch (Exception e) {
+            log.error("Failed to get user from database: {}", username, e);
             return null;
         }
     }

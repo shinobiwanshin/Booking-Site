@@ -47,7 +47,7 @@ import {
   Trash,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useParams } from "react-router";
 
 interface DateTimeSelectProperties {
@@ -188,9 +188,9 @@ const DashboardManageEventPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isEditMode && !isLoading && user?.access_token) {
+    if (isEditMode && !isLoading && user?.accessToken) {
       const fetchEvent = async () => {
-        const event: EventDetails = await getEvent(user.access_token, id);
+        const event: EventDetails = await getEvent(user.accessToken, id);
         setEventData({
           id: event.id,
           name: event.name,
@@ -364,7 +364,7 @@ const DashboardManageEventPage: React.FC = () => {
     e.preventDefault();
     setError(undefined);
 
-    if (isLoading || !user || !user.access_token) {
+    if (isLoading || !user || !user.accessToken) {
       console.error("User not found!");
       return;
     }
@@ -374,9 +374,9 @@ const DashboardManageEventPage: React.FC = () => {
         setError("Event does not have an ID");
         return;
       }
-      await handleEventUpdateSubmit(user.access_token, eventData.id);
+      await handleEventUpdateSubmit(user.accessToken, eventData.id);
     } else {
-      await handleEventCreateSubmit(user.access_token);
+      await handleEventCreateSubmit(user.accessToken);
     }
   };
 

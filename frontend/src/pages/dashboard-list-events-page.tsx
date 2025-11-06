@@ -34,7 +34,7 @@ import {
   Trash,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
 
 const DashboardListEventsPage: React.FC = () => {
@@ -54,10 +54,10 @@ const DashboardListEventsPage: React.FC = () => {
   >();
 
   useEffect(() => {
-    if (isLoading || !user?.access_token) {
+    if (isLoading || !user?.accessToken) {
       return;
     }
-    refreshEvents(user.access_token);
+    refreshEvents(user.accessToken);
   }, [isLoading, user, page]);
 
   const refreshEvents = async (accessToken: string) => {
@@ -123,16 +123,16 @@ const DashboardListEventsPage: React.FC = () => {
   };
 
   const handleDeleteEvent = async () => {
-    if (!eventToDelete || isLoading || !user?.access_token) {
+    if (!eventToDelete || isLoading || !user?.accessToken) {
       return;
     }
 
     try {
       setDeleteEventError(undefined);
-      await deleteEvent(user.access_token, eventToDelete.id);
+      await deleteEvent(user.accessToken, eventToDelete.id);
       setEventToDelete(undefined);
       setDialogOpen(false);
-      refreshEvents(user.access_token);
+      refreshEvents(user.accessToken);
     } catch (err) {
       if (err instanceof Error) {
         setDeleteEventError(err.message);
