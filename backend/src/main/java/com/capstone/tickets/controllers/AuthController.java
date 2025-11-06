@@ -1,5 +1,6 @@
 package com.capstone.tickets.controllers;
 
+import com.capstone.tickets.domain.dto.ForgotPasswordRequest;
 import com.capstone.tickets.domain.dto.RegistrationRequest;
 import com.capstone.tickets.domain.dto.RegistrationResponse;
 import com.capstone.tickets.services.AuthService;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,6 +43,24 @@ public class AuthController {
                             request.name(),
                             request.role(),
                             "Registration failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        log.info("Received forgot password request for email: {}", request.email());
+
+        try {
+            authService.sendPasswordResetEmail(request.email());
+            return ResponseEntity.ok(Map.of(
+                    "message", "If an account exists with that email, you will receive password reset instructions."));
+        } catch (Exception e) {
+            log.error("Forgot password failed for email: {}", request.email(), e);
+            // Return success message even on error to prevent email enumeration
+            return ResponseEntity.ok(Map.of(
+                    "message", "If an account exists with that email, you will receive password reset instructions."));
         }
     }
 }

@@ -54,4 +54,23 @@ public class AuthService {
             throw new RuntimeException("Failed to register user: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Send password reset email to the user
+     * 
+     * @param email The email address to send the reset link to
+     */
+    public void sendPasswordResetEmail(String email) {
+        log.info("Attempting to send password reset email to: {}", email);
+
+        try {
+            // Use Keycloak's built-in password reset functionality
+            keycloakService.sendPasswordResetEmail(email);
+            log.info("Password reset email sent successfully to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to: {}", email, e);
+            // Don't throw exception to prevent email enumeration attacks
+            // The controller will return a generic success message
+        }
+    }
 }

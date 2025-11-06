@@ -270,4 +270,82 @@ public class KeycloakService {
             return null;
         }
     }
+
+    /**
+     * Send password reset email to a user via Keycloak
+     * 
+     * @param email The email address to send the reset link to
+     */
+    public void sendPasswordResetEmail(String email) {
+        try {
+            // Get admin access token
+            String accessToken = getAdminAccessToken();
+
+            // Find user by email
+            UUID userId = getUserIdByEmail(email, accessToken);
+
+            if (userId == null) {
+                log.warn("No user found with email: {}", email);
+                return; // Don't throw exception to prevent email enumeration
+            }
+
+            // Send password reset email via Keycloak
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            String url = String.format("%s/admin/realms/%s/users/%s/execute-actions-email",
+                    keycloakAdminUrl, realm, userId.toString());
+
+            // Add query parameter for the actions
+            url += "?actions=UPDATE_PASSWORD";
+
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    entity,
+                    String.class);
+
+            log.info("Password reset email sent successfully for user with email: {}", email);
+
+        } catch (Exception e) {
+            log.error("Failed to send password reset email for: {}", email, e);
+            // Don't throw exception to prevent email enumeration
+        }
+    }
+
+    /**
+     * Retrieves user ID by email from Keycloak
+     */
+    private UUID getUserIdByEmail(String email, String accessToken) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = String.format("%s/admin/realms/%s/users?email=%s&exact=true",
+                    keycloakAdminUrl, realm, email);
+
+            ResponseEntity<List> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    List.class);
+
+            List<Map<String, Object>> users = response.getBody();
+            if (users != null && !users.isEmpty()) {
+                String id = (String) users.get(0).get("id");
+                return UUID.fromString(id);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            log.error("Failed to get user ID for email: {}", email, e);
+            return null;
+        }
+    }
 }
