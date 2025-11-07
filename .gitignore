@@ -1,0 +1,27 @@
+# Production environment variables (DO NOT COMMIT)
+.env.production
+.env.local
+.env
+
+# Railway
+.railway.json
+railway.json
+
+# Logs
+*.log
+backend.log
+nohup.out
+
+# Build artifacts
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

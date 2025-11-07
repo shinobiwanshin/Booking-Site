@@ -22,6 +22,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // Allow OPTIONS for CORS preflight
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                // Allow actuator health checks
+                                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/published-events/**")
                                                 .permitAll()
                                                 // Allow unauthenticated access to authentication endpoints
@@ -31,8 +33,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password")
                                                 .permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/auth/reset-password")
-                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/reset-password")
+                                                .permitAll()
                                                 // Allow temporary admin endpoints for role management
                                                 .requestMatchers("/api/admin/**")
                                                 .permitAll()
