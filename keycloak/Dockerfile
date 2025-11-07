@@ -31,4 +31,4 @@ WORKDIR /opt/keycloak
 EXPOSE 8080
 
 # Run Keycloak in production mode
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized"]
