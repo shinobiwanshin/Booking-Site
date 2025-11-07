@@ -1,0 +1,86 @@
+# Ignore files for Cloud Build and gcloud deployment
+
+# Node modules
+
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Maven
+
+backend/target/
+.m2/
+
+# IDE
+
+.idea/
+.vscode/
+_.iml
+_.swp
+_.swo
+_~
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Git
+
+.git/
+.gitignore
+
+# Documentation (except deployment guides)
+
+\*.md
+!GOOGLE_CLOUD_DEPLOYMENT.md
+!README.md
+
+# Environment files
+
+.env
+.env.local
+.env._.local
+_.env
+
+# Logs
+
+\*.log
+logs/
+
+# Temporary files
+
+tmp/
+temp/
+
+# Credentials
+
+gcp-credentials.txt
+gcp-deployment-info.txt
+_.pem
+_.key
+\*.crt
+
+# Build artifacts
+
+_.jar
+_.war
+\*.class
+
+# Test coverage
+
+coverage/
+.nyc_output/
+
+# Cache
+
+.cache/
+.parcel-cache/
+
+# Railway specific
+
+.railway/
+
+# Docker
+
+.dockerignore

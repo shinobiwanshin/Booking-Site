@@ -25,3 +25,11 @@ frontend/node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Google Cloud Platform
+gcp-credentials.txt
+gcp-deployment-info.txt
+.gcloud/
+
+# Cloud Build
+cloudbuild-local.yaml

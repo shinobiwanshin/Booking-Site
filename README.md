@@ -422,9 +422,44 @@ curl -X PUT 'http://localhost:9090/admin/realms/event-ticket-platform/users/{USE
 
 ## 🚢 Deployment
 
-### Railway Deployment (Production)
+### Google Cloud Platform (Recommended)
 
-This project is configured for Railway deployment.
+**Complete GCP deployment with Cloud Run, Cloud SQL, and Cloud CDN.**
+
+📖 **See detailed guide:** [GOOGLE_CLOUD_DEPLOYMENT.md](GOOGLE_CLOUD_DEPLOYMENT.md)
+
+**Quick Deploy:**
+
+```bash
+# Make script executable
+chmod +x deploy-to-gcp.sh
+
+# Run automated deployment
+./deploy-to-gcp.sh
+```
+
+**Manual Deployment:**
+
+```bash
+# Set variables
+export PROJECT_ID="your-project-id"
+export REGION="us-central1"
+
+# Deploy infrastructure
+gcloud sql instances create tickets-db --tier=db-f1-micro --region=$REGION
+gcloud run deploy backend --image=gcr.io/$PROJECT_ID/backend:latest
+gcloud run deploy keycloak --image=gcr.io/$PROJECT_ID/keycloak:latest
+
+# See full instructions in GOOGLE_CLOUD_DEPLOYMENT.md
+```
+
+**Estimated Cost:** ~$40-75/month (with free tier benefits)
+
+---
+
+### Railway Deployment (Alternative)
+
+This project is also configured for Railway deployment.
 
 **Backend:**
 
@@ -451,7 +486,9 @@ Set these in Railway dashboard:
 - `MAIL_USERNAME`
 - `MAIL_PASSWORD`
 
-### Docker Deployment
+---
+
+### Docker Deployment (Local/Self-Hosted)
 
 ```bash
 # Build and run with Docker Compose
