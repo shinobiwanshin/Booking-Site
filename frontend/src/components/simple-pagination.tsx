@@ -10,7 +10,7 @@ interface SimplePaginationProps<T> {
 export function SimplePagination<T>({
   pagination,
   onPageChange,
-}: React.FC<SimplePaginationProps<T>>) {
+}: SimplePaginationProps<T>) {
   const currentPage = pagination.number;
   const totalPages = pagination.totalPages;
 
