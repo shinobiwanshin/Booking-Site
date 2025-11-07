@@ -1,0 +1,3 @@
+# Railway configuration for Keycloak deployment
+# This is not needed when using Docker Image deployment in Railway dashboard
+# Keep this file for reference only

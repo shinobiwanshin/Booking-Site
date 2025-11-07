@@ -49,38 +49,48 @@ export const AuthContextProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   const login = async (username: string, password: string) => {
-    const response = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Login failed:", data);
+        throw new Error(data.message || "Login failed");
+      }
+
       const data = await response.json();
-      throw new Error(data.message || "Login failed");
+      console.log("Login successful:", {
+        username: data.username,
+        role: data.role,
+      });
+
+      // Clear any existing auth data first
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
+
+      // Store new tokens and user info
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("userRole", data.role);
+      localStorage.setItem("username", data.username);
+
+      setCustomUser({
+        username: data.username,
+        role: data.role,
+        accessToken: data.access_token,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-
-    const data = await response.json();
-
-    // Clear any existing auth data first
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("username");
-
-    // Store new tokens and user info
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
-    localStorage.setItem("userRole", data.role);
-    localStorage.setItem("username", data.username);
-
-    setCustomUser({
-      username: data.username,
-      role: data.role,
-      accessToken: data.access_token,
-    });
   };
 
   const logout = () => {

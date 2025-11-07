@@ -23,11 +23,15 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
     volumes:
       - keycloak-data:/opt/keycloak/data
     command:
       - start-dev
       - --db=dev-file
+      - --http-enabled=true
+      - --hostname-strict=false
 
 volumes:
   keycloak-data:
