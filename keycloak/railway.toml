@@ -1,3 +1,8 @@
-# Railway configuration for Keycloak deployment
-# This is not needed when using Docker Image deployment in Railway dashboard
-# Keep this file for reference only
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "keycloak/Dockerfile"
+
+[deploy]
+startCommand = "start --optimized"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
