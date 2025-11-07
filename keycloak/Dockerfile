@@ -15,6 +15,11 @@ RUN /opt/keycloak/bin/kc.sh build
 FROM quay.io/keycloak/keycloak:23.0.0
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+# Set runtime environment to match build configuration
+ENV KC_DB=postgres
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+
 WORKDIR /opt/keycloak
 
 # Expose port (Render uses 10000)
