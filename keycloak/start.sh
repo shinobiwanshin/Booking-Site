@@ -9,5 +9,9 @@ unset HOSTNAME
 unset RENDER_EXTERNAL_HOSTNAME
 unset RENDER_EXTERNAL_URL
 
+# Export admin credentials so Keycloak can create the admin user
+export KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+export KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-SecureAdmin2024!}
+
 # Start Keycloak in dev mode
 exec /opt/keycloak/bin/kc.sh start-dev --http-port=10000
