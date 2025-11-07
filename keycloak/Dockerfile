@@ -25,5 +25,5 @@ WORKDIR /opt/keycloak
 # Expose port (Render uses 10000)
 EXPOSE 10000
 
-# Run optimized Keycloak
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized"]
+# Run optimized Keycloak with explicit settings to avoid hostname conflicts
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--hostname-strict=false", "--http-enabled=true", "--http-port=10000"]
