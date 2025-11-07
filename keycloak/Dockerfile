@@ -22,8 +22,12 @@ ENV KC_METRICS_ENABLED=true
 
 WORKDIR /opt/keycloak
 
+# Copy startup script
+COPY start.sh /opt/keycloak/start.sh
+RUN chmod +x /opt/keycloak/start.sh
+
 # Expose port (Render uses 10000)
 EXPOSE 10000
 
-# Use start-dev to avoid hostname restrictions while keeping optimized build benefits
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev", "--http-port=10000"]
+# Use custom startup script to unset conflicting environment variables
+ENTRYPOINT ["/opt/keycloak/start.sh"]
