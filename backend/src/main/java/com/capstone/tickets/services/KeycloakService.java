@@ -64,10 +64,12 @@ public class KeycloakService {
             keycloakUser.put("id", userId.toString());
             keycloakUser.put("username", request.username());
             keycloakUser.put("email", request.email());
-            keycloakUser.put("firstName", request.name().split(" ")[0]);
-            if (request.name().split(" ").length > 1) {
-                keycloakUser.put("lastName", request.name().substring(request.name().indexOf(" ") + 1));
-            }
+
+            // Split name into firstName and lastName, ensuring both are always set
+            String[] nameParts = request.name().trim().split("\\s+", 2);
+            keycloakUser.put("firstName", nameParts[0]);
+            keycloakUser.put("lastName", nameParts.length > 1 ? nameParts[1] : nameParts[0]);
+
             keycloakUser.put("enabled", true);
             keycloakUser.put("emailVerified", true);
 
