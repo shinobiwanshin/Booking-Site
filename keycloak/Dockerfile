@@ -21,6 +21,6 @@ WORKDIR /opt/keycloak
 # Expose port
 EXPOSE 8080
 
-# Run Keycloak in production mode
+# Run Keycloak in production mode with optimized build
 # Database and other configs will come from environment variables
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized"]
