@@ -91,8 +91,9 @@ const LoginPage: React.FC = () => {
 
     try {
       // Call your backend API to trigger password reset
+      const API_BASE_URL = import.meta.env.VITE_API_URL || "";
       const response = await fetch(
-        "http://localhost:8080/api/auth/forgot-password",
+        `${API_BASE_URL}/api/auth/forgot-password`,
         {
           method: "POST",
           headers: {

@@ -182,7 +182,7 @@ export const searchPublishedEvents = async (
   page: number,
 ): Promise<SpringBootPagination<PublishedEventSummary>> => {
   const response = await fetch(
-    `/api/v1/published-events?q=${query}&page=${page}&size=4`,
+    `${API_BASE_URL}/api/v1/published-events?q=${query}&page=${page}&size=4`,
     {
       method: "GET",
       headers: {
@@ -266,7 +266,7 @@ export const purchaseTicket = async (
   quantity?: number,
 ): Promise<void> => {
   const response = await fetch(
-    `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
+    `${API_BASE_URL}/api/v1/events/${eventId}/ticket-types/${ticketTypeId}/tickets`,
     {
       method: "POST",
       headers: {

@@ -143,9 +143,11 @@ const router = createBrowserRouter([
 ]);
 
 const oidcConfig = {
-  authority: "http://localhost:9090/realms/event-ticket-platform",
-  client_id: "event-ticket-platform-app",
-  redirect_uri: "http://localhost:5173/callback",
+  authority: import.meta.env.VITE_KEYCLOAK_URL 
+    ? `${import.meta.env.VITE_KEYCLOAK_URL}/realms/${import.meta.env.VITE_KEYCLOAK_REALM || 'event-ticket-platform'}`
+    : "http://localhost:9090/realms/event-ticket-platform",
+  client_id: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "event-ticket-platform-app",
+  redirect_uri: window.location.origin + "/callback",
 };
 
 createRoot(document.getElementById("root")!).render(

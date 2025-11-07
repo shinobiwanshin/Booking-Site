@@ -59,8 +59,9 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || "";
       const response = await fetch(
-        "http://localhost:8080/api/auth/reset-password",
+        `${API_BASE_URL}/api/auth/reset-password`,
         {
           method: "POST",
           headers: {
