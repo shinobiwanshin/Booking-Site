@@ -13,8 +13,6 @@ services:
         value: keycloak
       - key: KC_DB_PASSWORD
         value: 0o8bg1cxvPx8rgi8A7I13ZeA5kUGuNT6
-      - key: KC_HOSTNAME_STRICT
-        value: false
       - key: KC_PROXY
         value: edge
       - key: KC_HTTP_ENABLED
