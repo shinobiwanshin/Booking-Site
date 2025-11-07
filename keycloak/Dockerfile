@@ -22,9 +22,8 @@ ENV KC_METRICS_ENABLED=true
 
 WORKDIR /opt/keycloak
 
-# Copy startup script
-COPY start.sh /opt/keycloak/start.sh
-RUN chmod +x /opt/keycloak/start.sh
+# Copy startup script with executable permissions
+COPY --chmod=755 start.sh /opt/keycloak/start.sh
 
 # Expose port (Render uses 10000)
 EXPOSE 10000
