@@ -57,9 +57,7 @@ const LoginPage: React.FC = () => {
       if (err instanceof Error) {
         // Check for network errors
         if (err.message.includes("fetch")) {
-          setLoginError(
-            "Unable to connect to server. Please make sure the backend is running on http://localhost:8080",
-          );
+          setLoginError("Unable to connect to server. Please try again later.");
         } else {
           setLoginError(err.message);
         }
@@ -92,16 +90,13 @@ const LoginPage: React.FC = () => {
     try {
       // Call your backend API to trigger password reset
       const API_BASE_URL = import.meta.env.VITE_API_URL || "";
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/forgot-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ email }),
+      });
 
       if (response.ok) {
         setResetSent(true);
